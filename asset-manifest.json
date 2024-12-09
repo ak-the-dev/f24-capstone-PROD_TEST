@@ -1,14 +1,13 @@
 {
   "files": {
     "main.css": "/f24-capstone-PROD_TEST/static/css/main.3fc5acab.css",
-    "main.js": "/f24-capstone-PROD_TEST/static/js/main.dd3942b2.js",
-    "static/media/AddPaycheck": "/f24-capstone-PROD_TEST/static/media/AddPaycheck.8ef70fb537cb5e248710",
+    "main.js": "/f24-capstone-PROD_TEST/static/js/main.79c1bef3.js",
     "index.html": "/f24-capstone-PROD_TEST/index.html",
     "main.3fc5acab.css.map": "/f24-capstone-PROD_TEST/static/css/main.3fc5acab.css.map",
-    "main.dd3942b2.js.map": "/f24-capstone-PROD_TEST/static/js/main.dd3942b2.js.map"
+    "main.79c1bef3.js.map": "/f24-capstone-PROD_TEST/static/js/main.79c1bef3.js.map"
   },
   "entrypoints": [
     "static/css/main.3fc5acab.css",
-    "static/js/main.dd3942b2.js"
+    "static/js/main.79c1bef3.js"
   ]
 }
