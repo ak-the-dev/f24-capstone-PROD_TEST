@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/f24-capstone-PROD_TEST/static/css/main.3fc5acab.css",
-    "main.js": "/f24-capstone-PROD_TEST/static/js/main.79c1bef3.js",
+    "main.css": "/f24-capstone-PROD_TEST/static/css/main.e4e77e08.css",
+    "main.js": "/f24-capstone-PROD_TEST/static/js/main.0bd9929b.js",
     "index.html": "/f24-capstone-PROD_TEST/index.html",
-    "main.3fc5acab.css.map": "/f24-capstone-PROD_TEST/static/css/main.3fc5acab.css.map",
-    "main.79c1bef3.js.map": "/f24-capstone-PROD_TEST/static/js/main.79c1bef3.js.map"
+    "main.e4e77e08.css.map": "/f24-capstone-PROD_TEST/static/css/main.e4e77e08.css.map",
+    "main.0bd9929b.js.map": "/f24-capstone-PROD_TEST/static/js/main.0bd9929b.js.map"
   },
   "entrypoints": [
-    "static/css/main.3fc5acab.css",
-    "static/js/main.79c1bef3.js"
+    "static/css/main.e4e77e08.css",
+    "static/js/main.0bd9929b.js"
   ]
 }
