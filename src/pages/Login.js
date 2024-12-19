@@ -2,12 +2,22 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useFirestore } from "../contexts/FirestoreContext";
+import {
+  Box,
+  Button,
+  Snackbar,
+  TextField,
+  Typography,
+  Alert,
+} from "@mui/material";
 
 const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [notification, setNotification] = useState({ open: false, message: "", severity: "info" });
+
   const navigate = useNavigate();
   const { signup, login } = useAuth();
   const { createUser } = useFirestore();
@@ -20,87 +30,148 @@ const Login = () => {
       !/[A-Z]/.test(password) ||
       !/\d/.test(password)
     ) {
-      // ALERT NOTIFICATION
-      alert(
-        "Password must be at least 8 characters long, include an uppercase letter, and a number."
-      );
+      setNotification({
+        open: true,
+        message:
+          "Password must be at least 8 characters long, include an uppercase letter, and a number.",
+        severity: "error",
+      });
       return;
     } else if (password !== confirmPassword) {
-      // ALERT NOTIFICATION
-      alert("Passwords do not match");
+      setNotification({
+        open: true,
+        message: "Passwords do not match.",
+        severity: "error",
+      });
       return;
     }
 
     try {
       const userCredentials = await signup(email, password);
       await createUser(userCredentials.user.uid, userCredentials.user.email);
-      alert("Account created successfully");
+      setNotification({
+        open: true,
+        message: "Account created successfully.",
+        severity: "success",
+      });
       navigate("/dashboard");
     } catch (error) {
-      // ALERT NOTIFICATION
-      alert("Registration failed: ", error);
+      setNotification({
+        open: true,
+        message: `Registration failed: ${error.message}`,
+        severity: "error",
+      });
     }
   };
 
   const handleLogin = async () => {
     try {
       await login(email, password);
-      alert("Logged in successfully");
+      setNotification({
+        open: true,
+        message: "Logged in successfully.",
+        severity: "success",
+      });
       navigate("/dashboard");
     } catch (error) {
-      alert("Login failed: ", error);
+      setNotification({
+        open: true,
+        message: `Login failed: ${error.message}`,
+        severity: "error",
+      });
     }
   };
 
+  const handleCloseNotification = () => {
+    setNotification({ ...notification, open: false });
+  };
+
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>Welcome to Centsible!</h1>
-      <div style={styles.formContainer}>
-        <input
-          type="email"
-          placeholder="E-mail"
-          style={styles.input}
+    <Box sx={styles.container}>
+      <Typography variant="h4" sx={styles.heading}>
+        Welcome to Centsible!
+      </Typography>
+      <Box sx={styles.formContainer}>
+        <TextField
+          label="E-mail"
+          variant="outlined"
+          fullWidth
+          sx={styles.input}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <input
+        <TextField
+          label="Password"
           type="password"
-          placeholder="Password"
-          style={styles.input}
+          variant="outlined"
+          fullWidth
+          sx={styles.input}
           onChange={(e) => setPassword(e.target.value)}
         />
+        {isRegister && (
+          <TextField
+            label="Confirm Password"
+            type="password"
+            variant="outlined"
+            fullWidth
+            sx={styles.input}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+        )}
         {isRegister ? (
           <>
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              style={styles.input}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-            <button style={styles.button} onClick={handleRegister}>
+            <Button
+              variant="contained"
+              fullWidth
+              sx={styles.button}
+              onClick={handleRegister}
+            >
               Register
-            </button>
-            <button
-              style={styles.altButton}
+            </Button>
+            <Button
+              variant="outlined"
+              fullWidth
+              sx={styles.altButton}
               onClick={() => setIsRegister(false)}
             >
               Back to Login
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <button style={styles.button} onClick={handleLogin}>
+            <Button
+              variant="contained"
+              fullWidth
+              sx={styles.button}
+              onClick={handleLogin}
+            >
               Login
-            </button>
-            <button
-              style={styles.altButton}
+            </Button>
+            <Button
+              variant="outlined"
+              fullWidth
+              sx={styles.altButton}
               onClick={() => setIsRegister(true)}
             >
               Register
-            </button>
+            </Button>
           </>
         )}
-      </div>
-    </div>
+      </Box>
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: "100%" }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 
@@ -111,50 +182,55 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     height: "100vh",
-    backgroundColor: "#1c1e22",
-    color: "#a1f4dc",
-    fontFamily: "Arial, sans-serif",
+    backgroundColor: "#1e1e2f",
+    color: "#ffffff",
   },
   heading: {
-    fontSize: "2em",
-    fontWeight: "bold",
-    marginBottom: "1em",
+    marginBottom: "20px",
+    color: "#79c2c2",
   },
   formContainer: {
     display: "flex",
     flexDirection: "column",
     width: "300px",
-    padding: "2em",
+    padding: "20px",
     backgroundColor: "#24272b",
     borderRadius: "8px",
     boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
   },
   input: {
-    padding: "10px",
-    margin: "10px 0",
-    borderRadius: "5px",
-    border: "none",
-    fontSize: "1em",
+    marginBottom: "15px",
+    "& .MuiInputBase-root": {
+      backgroundColor: "#2b2d42",
+      borderRadius: "5px",
+      color: "#ffffff",
+    },
+    "& .MuiInputLabel-root": {
+      color: "#79c2c2",
+    },
+    "& .MuiOutlinedInput-root": {
+      "& fieldset": {
+        borderColor: "#79c2c2",
+      },
+      "&:hover fieldset": {
+        borderColor: "#4CAF50",
+      },
+    },
   },
   button: {
-    padding: "10px",
-    margin: "10px 0",
-    borderRadius: "5px",
-    border: "none",
-    fontSize: "1em",
-    cursor: "pointer",
+    marginBottom: "15px",
     backgroundColor: "#3fbf8b",
-    color: "white",
+    color: "#ffffff",
+    "&:hover": {
+      backgroundColor: "#68a4a4",
+    },
   },
   altButton: {
-    padding: "10px",
-    margin: "10px 0",
-    borderRadius: "5px",
-    border: "none",
-    fontSize: "1em",
-    cursor: "pointer",
-    backgroundColor: "#3fbf8b",
-    color: "white",
+    borderColor: "#79c2c2",
+    color: "#79c2c2",
+    "&:hover": {
+      backgroundColor: "#2b2d42",
+    },
   },
 };
 

@@ -1,6 +1,5 @@
-// src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, Snackbar, Alert, Typography, CircularProgress } from "@mui/material";
 import { useFirestore } from "../contexts/FirestoreContext";
 import { useAuth } from "../contexts/AuthContext";
 import DashboardCard from "../components/DashboardCard";
@@ -9,108 +8,156 @@ import "../styles/Dashboard.css";
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const { getExpenses, getUserGoals, getIncome } = useFirestore();
-  const [recentPurchase, setRecentPurchase] = useState(
-    "No recent purchases found."
-  );
+  const [recentPurchase, setRecentPurchase] = useState("No recent purchases found.");
   const [goals, setGoals] = useState("No goals currently set.");
   const [income, setIncome] = useState("No income reported");
+  const [notification, setNotification] = useState({ open: false, message: "", severity: "info" });
+  const [loading, setLoading] = useState(true);
 
-  // Fetch expense data from database
-  useEffect(() => {
-    const fetchRecentExpense = async () => {
-      if (currentUser) {
-        try {
-          const expense = await getExpenses(currentUser.uid);
-          if (expense)
-            setRecentPurchase(
-              `Last spent: $${expense.amount} for ${expense.name} on ${expense.date}.`
-            );
-        } catch (e) {
-          // ADD AN ALERT TOAST
-          alert("Failed to fetch recent purchase: ", e);
-        }
-      }
-    };
-    fetchRecentExpense();
-  }, [currentUser, getExpenses]);
-
-  // Fetch user goal from database
-  useEffect(() => {
-    const fetchUserGoals = async () => {
-      if (currentUser) {
-        try {
-          const goalArr = await getUserGoals(currentUser.uid);
-          if (goalArr)
-            setGoals(`$${goalArr[0].amount} for ${goalArr[0].name}.`);
-        } catch (e) {
-          // ADD AN ALERT TOAST
-          alert("Failed to fetch user goals: ", e);
-        }
-      }
-    };
-    fetchUserGoals();
-  }, [currentUser, getUserGoals]);
+  const handleCloseNotification = () => {
+    setNotification({ ...notification, open: false });
+  };
 
   useEffect(() => {
-    const fetchUserIncome = async () => {
-      if (currentUser) {
-        try {
-          const currIncome = await getIncome(currentUser.uid);
-          if (currIncome)
-            setIncome(
-              `$${currIncome[0].amount} from ${currIncome[0].source} on ${currIncome[0].date}`
-            );
-        } catch (e) {
-          // ADD AN ALERT TOAST
-          alert("Failed to fetch user income: ", e);
+    const fetchData = async () => {
+      if (!currentUser) return;
+      setLoading(true);
+
+      try {
+        const [expenses, goalArr, currIncome] = await Promise.all([
+          getExpenses(currentUser.uid),
+          getUserGoals(currentUser.uid),
+          getIncome(currentUser.uid),
+        ]);
+
+        // Recent purchase
+        if (expenses && expenses.length > 0) {
+          const lastExpense = expenses[expenses.length - 1];
+          setRecentPurchase(
+            `Last spent: $${lastExpense.amount} for ${lastExpense.name} on ${new Date(
+              lastExpense.date
+            ).toLocaleDateString()}.`
+          );
         }
+
+        // Goals
+        if (goalArr && goalArr.length > 0) {
+          const lastGoal = goalArr[goalArr.length - 1];
+          setGoals(`Goal: Save $${lastGoal.amount} for ${lastGoal.name}.`);
+        }
+
+        // Income
+        if (currIncome && currIncome.length > 0) {
+          const lastIncome = currIncome[currIncome.length - 1];
+          setIncome(
+            `Latest paycheck: $${lastIncome.amount} from ${lastIncome.source} on ${new Date(
+              lastIncome.date
+            ).toLocaleDateString()}.`
+          );
+        }
+      } catch (e) {
+        setNotification({
+          open: true,
+          message: "Failed to fetch data.",
+          severity: "error",
+        });
+      } finally {
+        setLoading(false);
       }
     };
-    fetchUserIncome();
-  }, [currentUser, getIncome]);
+
+    fetchData();
+  }, [currentUser, getExpenses, getUserGoals, getIncome]);
 
   const cardData = [
     {
       title: "Add a purchase",
-      detail: `${recentPurchase}`,
+      detail: recentPurchase,
       link: "/add-purchase",
     },
     {
       title: "View your goals",
-      detail: `${goals}`,
-      link: "/goals",
+      detail: goals,
+      link: "/add-goal",
     },
     {
       title: "Track your spending",
-      detail: "",
+      detail: "Visualize your expenses.",
       link: "/spendings",
-      isChart: true, // Special marker for the chart card
     },
     {
       title: "Add a paycheck",
-      detail: `${income}`,
+      detail: income,
       link: "/income",
     },
     {
       title: "Edit your profile",
-      detail: "",
+      detail: "Update information",
       link: "/profile",
-      isEarnings: true, // Special marker for the earnings card
     },
   ];
 
   return (
-    <Box>
-      <div className="dashboard-container">
-        <div className="main-content">
-          <h1 className="heading">Dashboard</h1>
-          <div className="cards">
-            {cardData.map((card, index) => (
-              <DashboardCard key={index} {...card} />
-            ))}
-          </div>
-        </div>
-      </div>
+    <Box
+      sx={{
+        padding: "20px",
+        backgroundColor: "#1e1e2f",
+        minHeight: "100vh",
+        color: "#ffffff",
+      }}
+    >
+      <Typography
+        variant="h4"
+        sx={{
+          marginBottom: "20px",
+          textAlign: "center",
+          color: "#79c2c2",
+        }}
+      >
+        Dashboard
+      </Typography>
+
+      {loading ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "60vh",
+          }}
+        >
+          <CircularProgress color="primary" />
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "20px",
+            justifyContent: "center",
+            alignItems: "start",
+          }}
+        >
+          {cardData.map((card, index) => (
+            <DashboardCard key={index} {...card} />
+          ))}
+        </Box>
+      )}
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: "100%" }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

@@ -3,11 +3,9 @@ import {
   arrayUnion,
   serverTimestamp,
   setDoc,
-  updateDoc,
   doc,
   getDoc,
-  // eslint-disable-next-line
-  DocumentSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 import { createContext, useContext } from "react";
 
@@ -17,9 +15,7 @@ export const useFirestore = () => useContext(FirestoreContext);
 
 export const FirestoreProvider = ({ children }) => {
   /**
-   * Create a document indexed by UserID with user's email and a creation timestamp
-   * @param {String} id - User ID
-   * @param {String} email - User Email
+   * Create a document indexed by UserID with user's email and a creation timestamp.
    */
   const createUser = async (id, email) => {
     try {
@@ -34,18 +30,11 @@ export const FirestoreProvider = ({ children }) => {
   };
 
   /**
-   * Update fields of user document
-   * @param {String} id - User ID
-   * @param {*} userData - Object that stores user data
-   * userData = {
-   *  name: <String>,
-   *  username: <String>,
-   *  dob: <String>,
-   * }
+   * Update fields of user document.
    */
   const updateUser = async (id, userData) => {
     try {
-      await updateDoc(doc(db, "users", id), userData);
+      await setDoc(doc(db, "users", id), userData, { merge: true });
     } catch (e) {
       console.error("Error updating user document: ", e);
       throw e;
@@ -53,9 +42,7 @@ export const FirestoreProvider = ({ children }) => {
   };
 
   /**
-   * Returns document containing user data
-   * @param {String} id - User ID
-   * @returns {Promise<DocumentSnapshot | null>}
+   * Returns document containing user data.
    */
   const getUserData = async (id) => {
     try {
@@ -75,23 +62,17 @@ export const FirestoreProvider = ({ children }) => {
   };
 
   /**
-   * Appends income data to user document
-   * @param {String} id - User ID
-   * @param {*} incomeData - Object that stores each income data
-   * incomeData = {
-   *  source: <Source of income>,
-   *  amount: <Amount of income>,
-   *  date: <Date added>,
-   *  frequency: <Frequency of income>,
-   *  active: <Flag to enable or disable income>,
-   * }
+   * Adds income data to user document.
    */
   const addIncome = async (id, incomeData) => {
     try {
+      incomeData.id = Date.now().toString(); // Unique ID for income
       incomeData.active = true;
-      await updateDoc(doc(db, "users", id), {
-        income: arrayUnion(incomeData),
-      });
+      await setDoc(
+        doc(db, "users", id),
+        { income: arrayUnion(incomeData) },
+        { merge: true }
+      );
     } catch (e) {
       console.error("Error adding income data: ", e);
       throw e;
@@ -99,50 +80,70 @@ export const FirestoreProvider = ({ children }) => {
   };
 
   /**
-   * Gets income from user document
-   * @param {String} id - User ID
-   * @param {*} num - Number of elements to return (default 1, "all" for all)
-   * @returns {Promise<Array | null>} - Returns array of objects containing income data
+   * Gets income from user document.
    */
-  const getIncome = async (id, num = 1) => {
+  const getIncome = async (id, num = "all") => {
     try {
       const docSnap = await getDoc(doc(db, "users", id));
-
       if (docSnap.exists()) {
-        if (!docSnap.data().income || docSnap.data().income.length === 0)
-          return null;
+        const data = docSnap.data();
+        if (!data.income || data.income.length === 0) return null;
 
-        if (num === "all") return docSnap.data().income;
-
-        return docSnap.data().income.slice(0, num);
-      } else {
-        console.log("No such user document.");
-        return null;
+        return num === "all" ? data.income : data.income.slice(0, num);
       }
+      return null;
     } catch (e) {
-      console.error("Error retrieving user data: ", e);
+      console.error("Error retrieving user income: ", e);
       throw e;
     }
   };
 
   /**
-   * Append expense data to the expense document of user
-   * @param {String} id - User ID
-   * @param {*} expenseData - Object that stores each expense
-   * expenseData = {
-   *  name: <Name of the expense>,
-   *  amount: <Cost of the expense>,
-   *  merchant: <Merchant name>,
-   *  category: <Category of the expense>,
-   *  date: <User set data of purchase>,
-   * }
-   * @returns
+   * Updates an existing income entry.
+   */
+  const updateIncome = async (id, incomeId, updatedData) => {
+    try {
+      const docRef = doc(db, "users", id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const incomeArr = docSnap.data().income || [];
+        const updatedIncome = incomeArr.map((income) =>
+          income.id === incomeId ? { ...income, ...updatedData } : income
+        );
+        await updateDoc(docRef, { income: updatedIncome });
+      }
+    } catch (e) {
+      console.error("Error updating income: ", e);
+      throw e;
+    }
+  };
+
+  /**
+   * Deletes an income entry.
+   */
+  const deleteIncome = async (id, incomeId) => {
+    try {
+      const docRef = doc(db, "users", id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const incomeArr = docSnap.data().income || [];
+        const updatedIncome = incomeArr.filter((income) => income.id !== incomeId);
+        await updateDoc(docRef, { income: updatedIncome });
+      }
+    } catch (e) {
+      console.error("Error deleting income: ", e);
+      throw e;
+    }
+  };
+
+  /**
+   * Adds expense data to user document.
    */
   const addExpenses = async (id, expenseData) => {
     try {
-      let docRef = doc(db, "users", id, "expenses", "expenses");
+      expenseData.id = Date.now().toString(); // Unique ID for expense
       await setDoc(
-        docRef,
+        doc(db, "users", id),
         { expenses: arrayUnion(expenseData) },
         { merge: true }
       );
@@ -153,84 +154,135 @@ export const FirestoreProvider = ({ children }) => {
   };
 
   /**
-   * Gets expenses from document
-   * @param {String} id - User ID
-   * @param {int} num - Number of expenses to return (default: 1, 0 returns all)
-   * @param {String} category - Category of expenses to return
-   * @returns {Promise<Array | null>}
+   * Gets expenses from user document.
    */
-  const getExpenses = async (id, num = 1, category = "") => {
+  const getExpenses = async (id, num = "all", category = "") => {
     try {
-      const document = await getDoc(
-        doc(db, "users", id, "expenses", "expenses")
-      );
-      if (document.exists()) {
-        const expensesArr = document.data().expenses;
-
+      const docSnap = await getDoc(doc(db, "users", id));
+      if (docSnap.exists()) {
+        let expensesArr = docSnap.data().expenses || [];
         if (category) {
           expensesArr = expensesArr.filter(
             (expense) =>
-              expense.category.toLowerCase() === category.toLocaleLowerCase()
+              expense.category &&
+              expense.category.toLowerCase() === category.toLowerCase()
           );
         }
-
-        if (num === 0) return expensesArr;
-
-        return expensesArr.slice(0, num);
+        return num === "all" ? expensesArr : expensesArr.slice(0, num);
       }
       return null;
     } catch (e) {
-      console.error("Error getting expense: ", e);
+      console.error("Error retrieving expenses: ", e);
       throw e;
     }
   };
 
   /**
-   * Appends user goal to user document
-   * @param {String} id - User ID
-   * @param {*} userGoal
-   * userGoal = {
-   *  name: <Name of goal>,
-   *  amount: <Amount to save for>,
-   *  time: <Deadline for goal>,
-   *  progress: <Current amount saved for goal>,
-   * }
+   * Updates an existing expense entry.
+   */
+  const updateExpense = async (id, expenseId, updatedData) => {
+    try {
+      const docRef = doc(db, "users", id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const expensesArr = docSnap.data().expenses || [];
+        const updatedExpenses = expensesArr.map((expense) =>
+          expense.id === expenseId ? { ...expense, ...updatedData } : expense
+        );
+        await updateDoc(docRef, { expenses: updatedExpenses });
+      }
+    } catch (e) {
+      console.error("Error updating expense: ", e);
+      throw e;
+    }
+  };
+
+  /**
+   * Deletes an expense entry.
+   */
+  const deleteExpense = async (id, expenseId) => {
+    try {
+      const docRef = doc(db, "users", id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const expensesArr = docSnap.data().expenses || [];
+        const updatedExpenses = expensesArr.filter((expense) => expense.id !== expenseId);
+        await updateDoc(docRef, { expenses: updatedExpenses });
+      }
+    } catch (e) {
+      console.error("Error deleting expense: ", e);
+      throw e;
+    }
+  };
+
+  /**
+   * Adds user goal to user document.
    */
   const addUserGoal = async (id, userGoal) => {
     try {
-      await updateDoc(doc(db, "users", id), {
-        goals: arrayUnion(userGoal),
-      });
+      userGoal.id = Date.now().toString(); // Unique ID for goal
+      await setDoc(
+        doc(db, "users", id),
+        { goals: arrayUnion(userGoal) },
+        { merge: true }
+      );
     } catch (e) {
-      console.error("Error adding new goal: ", e);
+      console.error("Error adding user goal: ", e);
       throw e;
     }
   };
 
   /**
-   * Gets user goals from user doument
-   * [Optional] Show highest priority goals first or just by order they are stored
-   * @param {String} id - User ID
-   * @param {*} num - Number of user goals to return (default: 1, "all" returns all)
-   * @returns {Promise<Array | null>}
+   * Gets user goals from user document.
    */
-  const getUserGoals = async (id, num = 1) => {
+  const getUserGoals = async (id, num = "all") => {
     try {
       const docSnap = await getDoc(doc(db, "users", id));
-
       if (docSnap.exists()) {
-        const userData = docSnap.data();
-        if (!userData.goals || userData.goals.length === 0) return null;
-
-        if (num === "all") return userData.goals;
-
-        return userData.goals.slice(0, num);
-      } else {
-        console.log("No such user document.");
-        return null;
+        const goalsArr = docSnap.data().goals || [];
+        return num === "all" ? goalsArr : goalsArr.slice(0, num);
       }
+      return null;
     } catch (e) {
       console.error("Error retrieving user goals: ", e);
+      throw e;
+    }
+  };
+
+  /**
+   * Updates an existing goal entry.
+   */
+  const updateUserGoal = async (id, goalId, updatedData) => {
+    try {
+      const docRef = doc(db, "users", id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const goalsArr = docSnap.data().goals || [];
+        const updatedGoals = goalsArr.map((goal) =>
+          goal.id === goalId ? { ...goal, ...updatedData } : goal
+        );
+        await updateDoc(docRef, { goals: updatedGoals });
+      }
+    } catch (e) {
+      console.error("Error updating goal: ", e);
+      throw e;
+    }
+  };
+
+  /**
+   * Deletes a goal entry.
+   */
+  const deleteUserGoal = async (id, goalId) => {
+    try {
+      const docRef = doc(db, "users", id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const goalsArr = docSnap.data().goals || [];
+        const updatedGoals = goalsArr.filter((goal) => goal.id !== goalId);
+        await updateDoc(docRef, { goals: updatedGoals });
+      }
+    } catch (e) {
+      console.error("Error deleting goal: ", e);
       throw e;
     }
   };
@@ -238,13 +290,19 @@ export const FirestoreProvider = ({ children }) => {
   const value = {
     createUser,
     updateUser,
+    getUserData,
     addIncome,
     getIncome,
+    updateIncome,
+    deleteIncome,
     addExpenses,
     getExpenses,
-    getUserData,
+    updateExpense,
+    deleteExpense,
     addUserGoal,
     getUserGoals,
+    updateUserGoal,
+    deleteUserGoal,
   };
 
   return (

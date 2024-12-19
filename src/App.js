@@ -1,5 +1,5 @@
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Routes,
   Route,
   Navigate,
@@ -14,12 +14,20 @@ import AddPurchase from "./pages/AddPurchase";
 import AddGoal from "./pages/AddGoal";
 import AddPaycheck from "./pages/AddPaycheck";
 import Spending from "./pages/Spending";
-import Goals from "./pages/Goals";
+import LandingPage from "./pages/LandingPage"; // Splash screen
 
 const ProtectedRoute = ({ children }) => {
   const { currentUser } = useAuth();
 
-  if (!currentUser) return currentUser ? children : <Navigate to="/" replace />;
+  if (!currentUser) return <Navigate to="/login" replace />;
+
+  // Check if the user has already seen the splash screen
+  const hasSeenSplash = localStorage.getItem("hasSeenSplash");
+
+  if (!hasSeenSplash) {
+    localStorage.setItem("hasSeenSplash", "true"); // Mark splash screen as seen
+    return <Navigate to="/" replace />;
+  }
 
   return <Sidebar>{children}</Sidebar>;
 };
@@ -30,7 +38,11 @@ function App() {
       <FirestoreProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<Login />} />
+            {/* Splash Screen / Landing Page */}
+            <Route path="/" element={<LandingPage />} />
+            {/* Login */}
+            <Route path="/login" element={<Login />} />
+            {/* Protected Routes */}
             <Route
               path="/dashboard"
               element={
@@ -64,14 +76,6 @@ function App() {
               }
             />
             <Route
-              path="/goals"
-              element={
-                <ProtectedRoute>
-                  <Goals />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/add-goal"
               element={
                 <ProtectedRoute>
@@ -87,6 +91,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Catch-All */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

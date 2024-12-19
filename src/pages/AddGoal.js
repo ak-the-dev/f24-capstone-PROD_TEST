@@ -1,182 +1,223 @@
-// src/pages/AddGoal.js
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFirestore } from "../contexts/FirestoreContext";
 import { useAuth } from "../contexts/AuthContext";
-import { Box } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  Slider,
+  Typography,
+  LinearProgress,
+} from "@mui/material";
 
 const AddGoal = () => {
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { addUserGoal } = useFirestore();
+  const { addUserGoal, getUserGoals, updateUserGoal, deleteUserGoal } = useFirestore();
+  const [formData, setFormData] = useState({ name: "", amount: "", term: "long", priority: 2 });
+  const [goals, setGoals] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
 
-  // Potentially add expected or intended completion date specified by user
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    term: "long",
-    priority: "2",
-  });
+  const fetchGoals = async () => {
+    if (!currentUser) return;
+    const fetchedGoals = await getUserGoals(currentUser.uid, "all");
+    setGoals(fetchedGoals || []);
+  };
+
+  useEffect(() => {
+    fetchGoals();
+  }, [currentUser]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const goalData = {
-        name: formData.name,
-        amount: Number(formData.amount),
-        term: formData.term,
-        priority: formData.priority,
-      };
-
-      console.log(goalData);
-
-      await addUserGoal(currentUser.uid, goalData);
-
-      setFormData({
-        name: "",
-        amount: "",
-        term: "long",
-        priority: "2",
-      });
-      navigate(-1);
-    } catch (e) {
-      console.error("Error adding goal: ", e);
+    if (isEditing) {
+      await updateUserGoal(currentUser.uid, editId, formData);
+      setIsEditing(false);
+      setEditId(null);
+    } else {
+      await addUserGoal(currentUser.uid, formData);
     }
+    setFormData({ name: "", amount: "", term: "long", priority: 2 });
+    fetchGoals();
+  };
+
+  const handleEdit = (goal) => {
+    setFormData(goal);
+    setIsEditing(true);
+    setEditId(goal.id);
+  };
+
+  const handleDelete = async (id) => {
+    await deleteUserGoal(currentUser.uid, id);
+    fetchGoals();
   };
 
   return (
-    <Box>
-      <div style={{ display: "flex" }}>
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            backgroundColor: "#1a1c2c",
-            color: "#79c2c2",
+    <Box
+      sx={{
+        padding: "20px",
+        maxWidth: "800px",
+        margin: "auto",
+        backgroundColor: "#1e1e2f",
+        borderRadius: "10px",
+        color: "#ffffff",
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      <Typography
+        variant="h4"
+        sx={{ marginBottom: "20px", textAlign: "center", color: "#79c2c2" }}
+      >
+        Manage Your Goals
+      </Typography>
+
+      {/* Goal Form */}
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "15px",
+          marginBottom: "30px",
+        }}
+      >
+        <TextField
+          label="Goal Name"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          required
+          InputLabelProps={{ style: { color: "#79c2c2" } }}
+          InputProps={{
+            style: {
+              color: "#ffffff",
+              backgroundColor: "#2b2d42",
+              borderRadius: "5px",
+            },
+          }}
+        />
+        <TextField
+          label="Amount"
+          name="amount"
+          value={formData.amount}
+          onChange={handleInputChange}
+          type="number"
+          required
+          InputLabelProps={{ style: { color: "#79c2c2" } }}
+          InputProps={{
+            style: {
+              color: "#ffffff",
+              backgroundColor: "#2b2d42",
+              borderRadius: "5px",
+            },
+          }}
+        />
+        <Select
+          name="term"
+          value={formData.term}
+          onChange={handleInputChange}
+          sx={{
+            color: "#ffffff",
+            backgroundColor: "#2b2d42",
+            borderRadius: "5px",
           }}
         >
-          <div style={{ width: "320px", textAlign: "center" }}>
-            <h1
-              style={{
-                fontSize: "24px",
-                fontWeight: "bold",
-                marginBottom: "20px",
+          <MenuItem value="long">Long Term</MenuItem>
+          <MenuItem value="short">Short Term</MenuItem>
+        </Select>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Slider
+            value={formData.priority}
+            onChange={(e, newValue) => setFormData({ ...formData, priority: newValue })}
+            min={1}
+            max={3}
+            sx={{
+              flexGrow: 1,
+              color: "#79c2c2",
+            }}
+          />
+          <Typography sx={{ marginLeft: "10px", color: "#79c2c2" }}>
+            Priority: {formData.priority}
+          </Typography>
+        </Box>
+        <Button
+          type="submit"
+          variant="contained"
+          sx={{
+            backgroundColor: "#79c2c2",
+            color: "#ffffff",
+            "&:hover": { backgroundColor: "#68a4a4" },
+          }}
+        >
+          {isEditing ? "Update Goal" : "Add Goal"}
+        </Button>
+      </form>
+
+      {/* Goals List */}
+      <Typography variant="h5" sx={{ color: "#79c2c2", marginBottom: "10px" }}>
+        Your Goals
+      </Typography>
+      {goals.map((goal) => (
+        <Box
+          key={goal.id}
+          sx={{
+            marginBottom: "15px",
+            padding: "15px",
+            backgroundColor: "#2b2d42",
+            borderRadius: "10px",
+            color: "#ffffff",
+          }}
+        >
+          <Typography variant="h6" sx={{ marginBottom: "5px", color: "#79c2c2" }}>
+            {goal.name}
+          </Typography>
+          <Typography>Target: ${goal.amount}</Typography>
+          <Typography>Priority: {goal.priority}</Typography>
+          <Typography>Term: {goal.term}</Typography>
+          <LinearProgress
+            variant="determinate"
+            value={(goal.saved / goal.amount) * 100}
+            sx={{
+              backgroundColor: "#394049",
+              "& .MuiLinearProgress-bar": {
+                backgroundColor: "#79c2c2",
+              },
+              marginTop: "10px",
+            }}
+          />
+          <Box sx={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+            <Button
+              variant="outlined"
+              sx={{
+                color: "#79c2c2",
+                borderColor: "#79c2c2",
+                "&:hover": { backgroundColor: "#2b2d42" },
               }}
+              onClick={() => handleEdit(goal)}
             >
-              Add a New Goal
-            </h1>
-            <form
-              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-              onSubmit={handleSubmit}
+              Edit
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{
+                color: "#FF5252",
+                borderColor: "#FF5252",
+                "&:hover": { backgroundColor: "#2b2d42" },
+              }}
+              onClick={() => handleDelete(goal.id)}
             >
-              <input
-                type="text"
-                placeholder="Goal Name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                style={{
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "none",
-                  fontSize: "16px",
-                  outline: "none",
-                }}
-                required
-              />
-              <input
-                type="number"
-                placeholder="Amount"
-                name="amount"
-                value={formData.amount}
-                onChange={handleInputChange}
-                style={{
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "none",
-                  fontSize: "16px",
-                  outline: "none",
-                }}
-                required
-              />
-              <label
-                style={{
-                  fontWeight: "bold",
-                  color: "#79c2c2",
-                  textAlign: "left",
-                  fontSize: "14px",
-                }}
-              >
-                Choose a goal length:
-                <select
-                  name="term"
-                  value={formData.term}
-                  onChange={handleInputChange}
-                  style={{
-                    marginLeft: "5px",
-                    padding: "5px",
-                    borderRadius: "5px",
-                    border: "none",
-                    fontSize: "14px",
-                    outline: "none",
-                  }}
-                >
-                  <option value="long">Long Term</option>
-                  <option value="short">Short Term</option>
-                </select>
-              </label>
-              <label
-                style={{
-                  fontWeight: "bold",
-                  color: "#79c2c2",
-                  textAlign: "left",
-                  fontSize: "14px",
-                }}
-              >
-                Priority (Between 1 and 3):
-                <input
-                  type="range"
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleInputChange}
-                  min="1"
-                  max="3"
-                  style={{
-                    width: "100%",
-                    marginTop: "5px",
-                  }}
-                />
-              </label>
-              <button
-                type="submit"
-                style={{
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "none",
-                  backgroundColor: "#4bb9b9",
-                  color: "white",
-                  fontSize: "16px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                }}
-              >
-                Add Goal
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
+              Delete
+            </Button>
+          </Box>
+        </Box>
+      ))}
     </Box>
   );
 };

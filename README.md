@@ -1,54 +1,107 @@
-All Firebase functionality is configured to use the emulator
 
-# How to run
+# **Centsible**  
+Latest Production Deployment Version  
+[GitHub Repository](https://github.com/ak-the-dev/f24-capstone-PROD_TEST)
 
-1. Clone this branch
-2. Change directory to the root directory of this project
-3. To install node modules
+---
 
+## **How to Run**
+
+### **1. Clone the Repository**
+```bash
+git clone <repository-url>
 ```
-npm i
+
+### **2. Navigate to the Root Directory**
+```bash
+cd <repository-directory>
 ```
 
-4. To run with an optimized build and Firebase emulator (no live updates)
+### **3. Configure Environment**
+Create a `.env` file in the root directory with the appropriate Firebase keys.
 
-```b
+### **4. Install Dependencies**
+```bash
+npm install
+```
+
+---
+
+## **Run Scripts**
+
+The following scripts are defined in `package.json` and can be used for different purposes:
+
+### **Optimized Build**
+Runs the application with an optimized production build.
+```bash
 npm start
 ```
+This executes:
+- `react-scripts build` to create an optimized build.
+- Serves the application using `concurrently`.
 
-5. To run with a dev build and Firebase emulator (live updates)
+---
 
-```
+### **Development Build**
+Runs the application in development mode with live updates and Firebase emulators for authentication and Firestore.
+```bash
 npm run dev
 ```
+This executes:
+- `react-scripts start` for the React frontend.
+- `firebase emulators:start --only auth,firestore` for Firebase emulators.
 
-6. To run only website (live updates)
+---
 
-```
+### **Frontend Only (Live Updates)**
+Starts the React frontend with live updates.
+```bash
 npm run react
 ```
+This runs:
+- `react-scripts start`.
 
-7. To run only Firebase emulators
+---
 
-```
-npm run emulate
-```
-
-8. To create an optimized build
-
-```
+### **Static Optimized Build**
+Generates a static optimized build of the React app.
+```bash
 npm run build
 ```
+This executes:
+- `react-scripts build`.
 
-# Checklist
+---
 
-- [x] Login & Register Page
-- [x] Dashboard Page
-- [x] Add Purchase Page
-- [x] View Purchases Page (View only, no edits)
-- [x] Add Goal Page
-- [x] View Goals Page (View only, no edits)
-- [x] Track Spendings Page (View only, no edits)
-- [x] Add Paycheck Page
-- [ ] View Paycheck/Income Page
-- [ ] Updates on how much money user has made since registering
+### **Deploy to GitHub Pages**
+Deploys the optimized build to GitHub Pages.
+```bash
+npm run predeploy
+npm run deploy
+```
+This sequence executes:
+1. `npm run build` (via the `predeploy` script) to create an optimized build.
+2. `gh-pages -d build` (via the `deploy` script) to deploy the build to GitHub Pages.
+
+---
+
+### **Eject React Scripts (Advanced)**
+Ejects the configuration files for customization. Use this only if absolutely necessary, as it is irreversible.
+```bash
+npm run eject
+```
+This runs:
+- `react-scripts eject`.
+
+---
+
+## **Checklist**
+
+- [x] **Login & Register Page**  
+- [x] **Dashboard Page**  
+- [x] **Purchase Page**  
+- [x] **Paycheck Page**  
+- [x] **Goals Page**  
+- [x] **Track Spending Page**
+
+---
