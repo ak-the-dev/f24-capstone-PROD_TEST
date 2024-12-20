@@ -1,3 +1,11 @@
+/**
+ * Spending component.
+ * Displays financial data including income, expenses, and visual charts.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered Spending page.
+ */
+
 import React, { useEffect, useState } from "react";
 import { Bar, Pie } from "react-chartjs-2";
 import {
@@ -21,23 +29,69 @@ import {
   Typography,
 } from "@mui/material";
 
+// Register necessary Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
 const Spending = () => {
+  /**
+   * State to store the list of expenses.
+   * @type {[Array<Object>, Function]}
+   * @property {string} category - The category of the expense.
+   * @property {number} amount - The amount of the expense.
+   * @property {string} date - The date of the expense.
+   * @property {string} merchant - The merchant associated with the expense.
+   */
   const [expenseData, setExpenseData] = useState([]);
+
+  /**
+   * State to store the list of income entries.
+   * @type {[Array<Object>, Function]}
+   * @property {number} amount - The amount of income.
+   * @property {string} date - The date of the income.
+   */
   const [incomeData, setIncomeData] = useState([]);
+
+  /**
+   * State to store the filtered list of expenses.
+   * @type {[Array<Object>, Function]}
+   */
   const [filteredExpenses, setFilteredExpenses] = useState([]);
 
+  /**
+   * Firestore functions to retrieve expenses and income.
+   * @type {Object}
+   * @property {Function} getExpenses - Retrieves all expenses for a user.
+   * @property {Function} getIncome - Retrieves all income entries for a user.
+   */
   const { getExpenses, getIncome } = useFirestore();
+
+  /**
+   * Current authenticated user.
+   * @type {Object|null}
+   * @property {string} uid - The unique identifier of the user.
+   */
   const { currentUser } = useAuth();
 
+  /**
+   * useEffect hook to fetch expenses and income data when the component mounts or when dependencies change.
+   */
   useEffect(() => {
+    /**
+     * Fetches expenses and income data from Firestore.
+     *
+     * @async
+     * @function fetchData
+     * @returns {Promise<void>}
+     */
     const fetchData = async () => {
       if (!currentUser) return;
 
       try {
+        // Retrieve all expenses and income for the current user
         const expenses = await getExpenses(currentUser.uid, "all");
         const income = await getIncome(currentUser.uid, "all");
+
+        // Update state with fetched data
         setExpenseData(expenses || []);
         setIncomeData(income || []);
         setFilteredExpenses(expenses || []);
@@ -49,13 +103,20 @@ const Spending = () => {
     fetchData();
   }, [currentUser, getExpenses, getIncome]);
 
-  // Data for pie chart (Spending by Category)
+  /**
+   * Aggregates spending by category for the pie chart.
+   * @type {Object}
+   */
   const spendingByCategory = expenseData.reduce((acc, expense) => {
     const category = expense.category || "Uncategorized";
     acc[category] = (acc[category] || 0) + expense.amount;
     return acc;
   }, {});
 
+  /**
+   * Data configuration for the pie chart displaying spending by category.
+   * @type {Object}
+   */
   const pieData = {
     labels: Object.keys(spendingByCategory),
     datasets: [
@@ -66,7 +127,10 @@ const Spending = () => {
     ],
   };
 
-  // Data for bar chart (Monthly Spending and Income)
+  /**
+   * Aggregates financial data by month for the bar chart.
+   * @type {Object}
+   */
   const financialDataByMonth = [...expenseData, ...incomeData].reduce((acc, item) => {
     const month = new Date(item.date).toLocaleString("default", { month: "short", year: "numeric" });
     const type = item.amount > 0 ? (incomeData.includes(item) ? "income" : "expense") : "unknown";
@@ -77,6 +141,10 @@ const Spending = () => {
     return acc;
   }, {});
 
+  /**
+   * Data configuration for the bar chart displaying monthly income vs expenses.
+   * @type {Object}
+   */
   const barData = {
     labels: Object.keys(financialDataByMonth),
     datasets: [
@@ -93,9 +161,22 @@ const Spending = () => {
     ],
   };
 
-  // Financial summary
+  /**
+   * Calculates the total income.
+   * @type {number}
+   */
   const totalIncome = incomeData.reduce((sum, income) => sum + income.amount, 0);
+
+  /**
+   * Calculates the total expenses.
+   * @type {number}
+   */
   const totalExpense = expenseData.reduce((sum, expense) => sum + expense.amount, 0);
+
+  /**
+   * Calculates the balance (total income minus total expenses).
+   * @type {number}
+   */
   const balance = totalIncome - totalExpense;
 
   return (
@@ -170,7 +251,6 @@ const Spending = () => {
           <Pie data={pieData} />
         </Box>
       </Box>
-
 
       {/* Expense List */}
       <Box>

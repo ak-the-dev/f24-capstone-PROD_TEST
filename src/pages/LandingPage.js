@@ -1,50 +1,91 @@
+/**
+ * SplashScreen / LandingPage Component
+ * Serves as the introductory page for the application. Provides an overview of the app's purpose
+ * and functionality, and a button to navigate to the dashboard.
+ *
+ * @component
+ * @example
+ * return (
+ *   <SplashScreen />
+ * )
+ */
+
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, Typography, Button } from "@mui/material";
+import { useNavigate } from "react-router-dom"; // Navigation hook for programmatic routing
+import { Box, Typography, Button } from "@mui/material"; // Material-UI components for UI design
 
 const SplashScreen = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Hook for navigation between routes
 
+  /**
+   * Handles navigation to the dashboard.
+   * Triggered when the "Get Started" button is clicked.
+   */
   const handleGetStarted = () => {
-    // Navigate to the dashboard after viewing the splash screen
-    navigate("/dashboard");
+    navigate("/dashboard"); // Navigate to the dashboard route
   };
 
   return (
     <Box
       sx={{
+        // Container styling
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        height: "100vh",
-        backgroundColor: "#1e1e2f",
-        color: "#ffffff",
-        padding: "20px",
-        textAlign: "center",
+        height: "100vh", // Full viewport height
+        backgroundColor: "#1e1e2f", // Background color
+        color: "#ffffff", // Text color
+        padding: "20px", // Padding around content
+        textAlign: "center", // Center-align text content
       }}
     >
-      <Typography variant="h3" sx={{ marginBottom: "20px", color: "#79c2c2" }}>
+      {/* App title */}
+      <Typography
+        variant="h3"
+        sx={{
+          marginBottom: "20px", // Space below the title
+          color: "#79c2c2", // Accent color for the title
+        }}
+      >
         Welcome to Centsible
       </Typography>
-      <Typography variant="h6" sx={{ marginBottom: "30px" }}>
-        Centsible is a budgeting app designed to educate individuals of all ages and professions 
-        on managing their finances effectively. Whether you're just starting or a seasoned budgeter, 
+
+      {/* App description */}
+      <Typography
+        variant="h6"
+        sx={{
+          marginBottom: "30px", // Space below the description
+        }}
+      >
+        Centsible is a budgeting app designed to educate individuals of all ages and professions
+        on managing their finances effectively. Whether you're just starting or a seasoned budgeter,
         Centsible empowers you to enhance your budgeting skills and make smarter financial decisions.
       </Typography>
-      <Typography variant="body1" sx={{ marginBottom: "40px" }}>
-        Unlock advanced features as you grow your financial knowledge and make your financial journey smoother and more effective.
+
+      {/* Highlight of additional app features */}
+      <Typography
+        variant="body1"
+        sx={{
+          marginBottom: "40px", // Space below the additional highlight
+        }}
+      >
+        Unlock advanced features as you grow your financial knowledge and make your financial journey
+        smoother and more effective.
       </Typography>
+
+      {/* Button to navigate to the dashboard */}
       <Button
         variant="contained"
         sx={{
-          backgroundColor: "#79c2c2",
-          color: "#ffffff",
+          // Button styling
+          backgroundColor: "#79c2c2", // Button background color
+          color: "#ffffff", // Button text color
           "&:hover": {
-            backgroundColor: "#68a4a4",
+            backgroundColor: "#68a4a4", // Button hover background color
           },
         }}
-        onClick={handleGetStarted}
+        onClick={handleGetStarted} // Click handler for navigation
       >
         Get Started
       </Button>

@@ -1,3 +1,11 @@
+/**
+ * Login component.
+ * Handles user authentication including login and registration.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered Login component.
+ */
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,19 +20,59 @@ import {
 } from "@mui/material";
 
 const Login = () => {
+  /**
+   * State to determine if the form is in registration mode.
+   * @type {[boolean, Function]}
+   */
   const [isRegister, setIsRegister] = useState(false);
+
+  /**
+   * State to store the user's email input.
+   * @type {[string, Function]}
+   */
   const [email, setEmail] = useState("");
+
+  /**
+   * State to store the user's password input.
+   * @type {[string, Function]}
+   */
   const [password, setPassword] = useState("");
+
+  /**
+   * State to store the user's password confirmation input during registration.
+   * @type {[string, Function]}
+   */
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [notification, setNotification] = useState({ open: false, message: "", severity: "info" });
+
+  /**
+   * State to manage notification messages.
+   * @type {[Object, Function]}
+   * @property {boolean} open - Indicates if the notification is visible.
+   * @property {string} message - The message to display in the notification.
+   * @property {string} severity - The severity level of the notification (e.g., "info", "success", "error").
+   */
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
 
   const navigate = useNavigate();
   const { signup, login } = useAuth();
   const { createUser } = useFirestore();
 
+  /**
+   * Handles the registration process when the user submits the registration form.
+   *
+   * @async
+   * @function handleRegister
+   * @param {React.FormEvent<HTMLFormElement>} event - The form submission event.
+   * @returns {Promise<void>}
+   */
   const handleRegister = async (event) => {
     event.preventDefault();
 
+    // Validate password strength
     if (
       password.length < 8 ||
       !/[A-Z]/.test(password) ||
@@ -37,7 +85,10 @@ const Login = () => {
         severity: "error",
       });
       return;
-    } else if (password !== confirmPassword) {
+    }
+
+    // Check if passwords match
+    if (password !== confirmPassword) {
       setNotification({
         open: true,
         message: "Passwords do not match.",
@@ -47,15 +98,23 @@ const Login = () => {
     }
 
     try {
+      // Create a new user with email and password
       const userCredentials = await signup(email, password);
+
+      // Create a user document in Firestore
       await createUser(userCredentials.user.uid, userCredentials.user.email);
+
+      // Show success notification
       setNotification({
         open: true,
         message: "Account created successfully.",
         severity: "success",
       });
+
+      // Navigate to the dashboard
       navigate("/dashboard");
     } catch (error) {
+      // Show error notification if registration fails
       setNotification({
         open: true,
         message: `Registration failed: ${error.message}`,
@@ -64,16 +123,29 @@ const Login = () => {
     }
   };
 
+  /**
+   * Handles the login process when the user submits the login form.
+   *
+   * @async
+   * @function handleLogin
+   * @returns {Promise<void>}
+   */
   const handleLogin = async () => {
     try {
+      // Log in the user with email and password
       await login(email, password);
+
+      // Show success notification
       setNotification({
         open: true,
         message: "Logged in successfully.",
         severity: "success",
       });
+
+      // Navigate to the dashboard
       navigate("/dashboard");
     } catch (error) {
+      // Show error notification if login fails
       setNotification({
         open: true,
         message: `Login failed: ${error.message}`,
@@ -82,6 +154,12 @@ const Login = () => {
     }
   };
 
+  /**
+   * Closes the notification Snackbar.
+   *
+   * @function handleCloseNotification
+   * @returns {void}
+   */
   const handleCloseNotification = () => {
     setNotification({ ...notification, open: false });
   };
@@ -175,6 +253,12 @@ const Login = () => {
   );
 };
 
+/**
+ * Styles object for the Login component.
+ * Contains styling for various elements using Material-UI's sx prop.
+ *
+ * @type {Object}
+ */
 const styles = {
   container: {
     display: "flex",

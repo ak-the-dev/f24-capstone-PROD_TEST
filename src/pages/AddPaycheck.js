@@ -1,5 +1,17 @@
+/**
+ * Paycheck Component
+ * Manages user paychecks, including adding, editing, deleting, and displaying a list of paychecks.
+ * Also visualizes paycheck trends using a line chart.
+ *
+ * @component
+ * @example
+ * return (
+ *   <Paycheck />
+ * )
+ */
+
 import React, { useState, useEffect } from "react";
-import { Line } from "react-chartjs-2";
+import { Line } from "react-chartjs-2"; // Line chart component from Chart.js
 import {
   Box,
   Button,
@@ -11,9 +23,9 @@ import {
   TableHead,
   TableRow,
   IconButton,
-} from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+} from "@mui/material"; // Material-UI components for UI
+import DeleteIcon from "@mui/icons-material/Delete"; // Delete action icon
+import EditIcon from "@mui/icons-material/Edit"; // Edit action icon
 import {
   Chart as ChartJS,
   LineElement,
@@ -23,11 +35,11 @@ import {
   Tooltip,
   Legend,
   CategoryScale,
-} from "chart.js";
-import { useFirestore } from "../contexts/FirestoreContext";
-import { useAuth } from "../contexts/AuthContext";
+} from "chart.js"; // Chart.js components for rendering the chart
+import { useFirestore } from "../contexts/FirestoreContext"; // Firestore context for database operations
+import { useAuth } from "../contexts/AuthContext"; // Auth context for current user access
 
-// Register Chart.js components
+// Register required Chart.js components
 ChartJS.register(
   LineElement,
   PointElement,
@@ -39,93 +51,127 @@ ChartJS.register(
 );
 
 const Paycheck = () => {
+  // Access current user and Firestore methods
   const { currentUser } = useAuth();
   const { getIncome, addIncome, updateIncome, deleteIncome } = useFirestore();
 
-  const [paychecks, setPaychecks] = useState([]);
-  const [formData, setFormData] = useState({ source: "", amount: "", date: "" });
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
+  // State management
+  const [paychecks, setPaychecks] = useState([]); // List of paychecks
+  const [formData, setFormData] = useState({ source: "", amount: "", date: "" }); // Form data for adding/updating paychecks
+  const [isEditing, setIsEditing] = useState(false); // Indicates if editing mode is active
+  const [editId, setEditId] = useState(null); // ID of the paycheck being edited
 
+  /**
+   * Fetches the list of paychecks from Firestore and updates the state.
+   * Triggered on component mount or when the current user changes.
+   */
   useEffect(() => {
     const fetchPaychecks = async () => {
-      if (!currentUser) return;
-      const fetchedPaychecks = await getIncome(currentUser.uid, "all");
-      setPaychecks(fetchedPaychecks || []);
+      if (!currentUser) return; // Exit if no user is logged in
+      const fetchedPaychecks = await getIncome(currentUser.uid, "all"); // Fetch all paychecks for the current user
+      setPaychecks(fetchedPaychecks || []); // Update state with fetched data or an empty array
     };
 
     fetchPaychecks();
   }, [currentUser, getIncome]);
 
+  /**
+   * Handles changes in form input fields.
+   * Updates the formData state with the new values.
+   *
+   * @param {Object} e - The input change event
+   */
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value } = e.target; // Extract name and value from the input
+    setFormData({ ...formData, [name]: value }); // Update the corresponding field in formData
   };
 
+  /**
+   * Handles the form submission for adding or updating a paycheck.
+   * Sends the data to Firestore and refreshes the paycheck list.
+   *
+   * @param {Object} e - The form submission event
+   */
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission behavior
     if (isEditing) {
+      // If editing, update the existing paycheck
       await updateIncome(currentUser.uid, editId, {
         ...formData,
-        amount: parseFloat(formData.amount),
+        amount: parseFloat(formData.amount), // Ensure amount is stored as a number
       });
-      setIsEditing(false);
-      setEditId(null);
+      setIsEditing(false); // Exit editing mode
+      setEditId(null); // Clear the edit ID
     } else {
+      // If adding, create a new paycheck
       await addIncome(currentUser.uid, {
         ...formData,
-        amount: parseFloat(formData.amount),
+        amount: parseFloat(formData.amount), // Ensure amount is stored as a number
       });
     }
 
+    // Reset the form and refresh the paycheck list
     setFormData({ source: "", amount: "", date: "" });
     const updatedPaychecks = await getIncome(currentUser.uid, "all");
     setPaychecks(updatedPaychecks || []);
   };
 
+  /**
+   * Handles the deletion of a paycheck.
+   * Removes the selected paycheck from Firestore and refreshes the paycheck list.
+   *
+   * @param {string} id - The ID of the paycheck to delete
+   */
   const handleDelete = async (id) => {
-    await deleteIncome(currentUser.uid, id);
-    const updatedPaychecks = await getIncome(currentUser.uid, "all");
+    await deleteIncome(currentUser.uid, id); // Delete the paycheck by its ID
+    const updatedPaychecks = await getIncome(currentUser.uid, "all"); // Refresh the paycheck list
     setPaychecks(updatedPaychecks || []);
   };
 
+  /**
+   * Handles editing a paycheck.
+   * Populates the form with the data of the selected paycheck and enters editing mode.
+   *
+   * @param {Object} paycheck - The paycheck data to edit
+   */
   const handleEdit = (paycheck) => {
-    setFormData({ ...paycheck, amount: paycheck.amount.toString() });
-    setIsEditing(true);
-    setEditId(paycheck.id);
+    setFormData({ ...paycheck, amount: paycheck.amount.toString() }); // Populate the form with paycheck data
+    setIsEditing(true); // Enter editing mode
+    setEditId(paycheck.id); // Set the ID of the paycheck being edited
   };
 
-  // Line Chart Data
-  const sortedPaychecks = [...paychecks].sort((a, b) => new Date(a.date) - new Date(b.date));
+  // Prepare data for the line chart
+  const sortedPaychecks = [...paychecks].sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort paychecks by date
   const lineData = {
-    labels: sortedPaychecks.map((p) => new Date(p.date).toLocaleDateString()),
+    labels: sortedPaychecks.map((p) => new Date(p.date).toLocaleDateString()), // Use paycheck dates as labels
     datasets: [
       {
-        label: "Paycheck Amount",
-        data: sortedPaychecks.map((p) => p.amount),
-        borderColor: "#79c2c2",
-        tension: 0.3,
-        fill: false,
+        label: "Paycheck Amount", // Chart legend label
+        data: sortedPaychecks.map((p) => p.amount), // Paycheck amounts as data points
+        borderColor: "#79c2c2", // Line color
+        tension: 0.3, // Curve tension for the line
+        fill: false, // Disable area fill under the line
       },
     ],
   };
 
+  // Chart configuration options
   const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, // Make the chart responsive
+    maintainAspectRatio: false, // Disable maintaining a fixed aspect ratio
     scales: {
       x: {
-        type: "category",
+        type: "category", // Use category scale for the x-axis
         title: {
           display: true,
-          text: "Date",
+          text: "Date", // Label for the x-axis
         },
       },
       y: {
-        beginAtZero: true,
+        beginAtZero: true, // Start y-axis at zero
         title: {
           display: true,
-          text: "Amount ($)",
+          text: "Amount ($)", // Label for the y-axis
         },
       },
     },
@@ -134,6 +180,7 @@ const Paycheck = () => {
   return (
     <Box
       sx={{
+        // Container styling
         padding: "20px",
         maxWidth: "800px",
         margin: "auto",
@@ -143,6 +190,7 @@ const Paycheck = () => {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
       }}
     >
+      {/* Header */}
       <Typography
         variant="h4"
         sx={{ marginBottom: "20px", textAlign: "center", color: "#79c2c2" }}
@@ -150,7 +198,7 @@ const Paycheck = () => {
         Paycheck Management
       </Typography>
 
-      {/* Paycheck Form */}
+      {/* Form for adding/updating a paycheck */}
       <form
         onSubmit={handleSubmit}
         style={{
@@ -160,6 +208,7 @@ const Paycheck = () => {
           marginBottom: "30px",
         }}
       >
+        {/* Input fields for paycheck data */}
         <TextField
           label="Source"
           name="source"
@@ -210,6 +259,7 @@ const Paycheck = () => {
           }}
           required
         />
+        {/* Submit button */}
         <Button
           type="submit"
           variant="contained"
@@ -223,13 +273,14 @@ const Paycheck = () => {
         </Button>
       </form>
 
-      {/* Paycheck List */}
+      {/* Table of paychecks */}
       <Typography variant="h5" sx={{ color: "#79c2c2", marginBottom: "10px" }}>
         Paychecks
       </Typography>
       <Table>
         <TableHead>
           <TableRow>
+            {/* Table headers */}
             <TableCell style={{ color: "#79c2c2" }}>Source</TableCell>
             <TableCell style={{ color: "#79c2c2" }} align="right">
               Amount ($)
@@ -239,6 +290,7 @@ const Paycheck = () => {
           </TableRow>
         </TableHead>
         <TableBody>
+          {/* Render paycheck rows */}
           {paychecks.map((paycheck, index) => (
             <TableRow key={index}>
               <TableCell style={{ color: "#ffffff" }}>{paycheck.source}</TableCell>
@@ -249,6 +301,7 @@ const Paycheck = () => {
                 {new Date(paycheck.date).toLocaleDateString()}
               </TableCell>
               <TableCell>
+                {/* Action buttons */}
                 <IconButton onClick={() => handleEdit(paycheck)}>
                   <EditIcon sx={{ color: "#79c2c2" }} />
                 </IconButton>
@@ -261,7 +314,7 @@ const Paycheck = () => {
         </TableBody>
       </Table>
 
-      {/* Line Chart */}
+      {/* Line chart for paycheck trends */}
       <Box style={{ height: "400px", marginTop: "20px" }}>
         <Typography variant="h5" sx={{ color: "#79c2c2", marginBottom: "10px" }}>
           Paycheck Trend

@@ -1,6 +1,18 @@
+/**
+ * Goal Component
+ * Allows users to manage their financial goals. Users can add, edit, delete, and view their goals.
+ * Goals are stored in Firestore and displayed in a list format with progress indicators.
+ *
+ * @component
+ * @example
+ * return (
+ *   <AddGoal />
+ * )
+ */
+
 import React, { useState, useEffect } from "react";
-import { useFirestore } from "../contexts/FirestoreContext";
-import { useAuth } from "../contexts/AuthContext";
+import { useFirestore } from "../contexts/FirestoreContext"; // Firestore context for database operations
+import { useAuth } from "../contexts/AuthContext"; // Auth context for accessing current user
 import {
   Box,
   Button,
@@ -10,58 +22,97 @@ import {
   Slider,
   Typography,
   LinearProgress,
-} from "@mui/material";
+} from "@mui/material"; // Material-UI components for styling
 
 const AddGoal = () => {
+  // Access the current user and Firestore methods
   const { currentUser } = useAuth();
   const { addUserGoal, getUserGoals, updateUserGoal, deleteUserGoal } = useFirestore();
-  const [formData, setFormData] = useState({ name: "", amount: "", term: "long", priority: 2 });
-  const [goals, setGoals] = useState([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editId, setEditId] = useState(null);
 
+  // State management for goals and form data
+  const [formData, setFormData] = useState({
+    name: "", // Name of the goal
+    amount: "", // Target amount for the goal
+    term: "long", // Term of the goal: long-term or short-term
+    priority: 2, // Priority level (1-3)
+  });
+  const [goals, setGoals] = useState([]); // List of goals fetched from Firestore
+  const [isEditing, setIsEditing] = useState(false); // Toggle between add and edit modes
+  const [editId, setEditId] = useState(null); // ID of the goal being edited
+
+  /**
+   * Fetches the list of goals from Firestore and updates the state.
+   * Triggered on component mount or when the current user changes.
+   */
   const fetchGoals = async () => {
-    if (!currentUser) return;
-    const fetchedGoals = await getUserGoals(currentUser.uid, "all");
-    setGoals(fetchedGoals || []);
+    if (!currentUser) return; // Exit if no user is logged in
+    const fetchedGoals = await getUserGoals(currentUser.uid, "all"); // Fetch all goals for the current user
+    setGoals(fetchedGoals || []); // Update state with fetched data or an empty array
   };
 
   useEffect(() => {
     fetchGoals();
   }, [currentUser]);
 
+  /**
+   * Handles changes in form input fields.
+   * Updates the formData state with the new values.
+   *
+   * @param {Object} e - The input change event
+   */
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value } = e.target; // Extract name and value from the input
+    setFormData({ ...formData, [name]: value }); // Update the corresponding field in formData
   };
 
+  /**
+   * Handles the form submission for adding or updating a goal.
+   * Sends the data to Firestore and refreshes the goals list.
+   *
+   * @param {Object} e - The form submission event
+   */
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
     if (isEditing) {
+      // If editing, update the existing goal
       await updateUserGoal(currentUser.uid, editId, formData);
-      setIsEditing(false);
-      setEditId(null);
+      setIsEditing(false); // Exit editing mode
+      setEditId(null); // Clear the edit ID
     } else {
+      // If adding, create a new goal
       await addUserGoal(currentUser.uid, formData);
     }
-    setFormData({ name: "", amount: "", term: "long", priority: 2 });
-    fetchGoals();
+    setFormData({ name: "", amount: "", term: "long", priority: 2 }); // Reset the form data
+    fetchGoals(); // Refresh the goals list
   };
 
+  /**
+   * Handles editing a goal.
+   * Populates the form with the selected goal's data and enters editing mode.
+   *
+   * @param {Object} goal - The goal to edit
+   */
   const handleEdit = (goal) => {
-    setFormData(goal);
-    setIsEditing(true);
-    setEditId(goal.id);
+    setFormData(goal); // Populate the form with the goal's data
+    setIsEditing(true); // Enter editing mode
+    setEditId(goal.id); // Set the ID of the goal being edited
   };
 
+  /**
+   * Handles deleting a goal.
+   * Removes the selected goal from Firestore and refreshes the goals list.
+   *
+   * @param {string} id - The ID of the goal to delete
+   */
   const handleDelete = async (id) => {
-    await deleteUserGoal(currentUser.uid, id);
-    fetchGoals();
+    await deleteUserGoal(currentUser.uid, id); // Delete the goal by its ID
+    fetchGoals(); // Refresh the goals list
   };
 
   return (
     <Box
       sx={{
+        // Container styling
         padding: "20px",
         maxWidth: "800px",
         margin: "auto",
@@ -71,6 +122,7 @@ const AddGoal = () => {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
       }}
     >
+      {/* Header */}
       <Typography
         variant="h4"
         sx={{ marginBottom: "20px", textAlign: "center", color: "#79c2c2" }}
@@ -78,7 +130,7 @@ const AddGoal = () => {
         Manage Your Goals
       </Typography>
 
-      {/* Goal Form */}
+      {/* Form for adding/updating a goal */}
       <form
         onSubmit={handleSubmit}
         style={{
@@ -135,7 +187,9 @@ const AddGoal = () => {
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Slider
             value={formData.priority}
-            onChange={(e, newValue) => setFormData({ ...formData, priority: newValue })}
+            onChange={(e, newValue) =>
+              setFormData({ ...formData, priority: newValue })
+            }
             min={1}
             max={3}
             sx={{
@@ -160,7 +214,7 @@ const AddGoal = () => {
         </Button>
       </form>
 
-      {/* Goals List */}
+      {/* List of goals */}
       <Typography variant="h5" sx={{ color: "#79c2c2", marginBottom: "10px" }}>
         Your Goals
       </Typography>

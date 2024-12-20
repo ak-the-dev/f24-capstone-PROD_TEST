@@ -2,13 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!-- Favicon for the application -->
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <!-- Ensures the app is responsive on all devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <!-- Theme color matching the application's primary color -->
+    <meta name="theme-color" content="#017d84" />
+    <!-- Description of the application for SEO purposes -->
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="Centsible - Manage your finances effectively and achieve your financial goals."
     />
+    <!-- Apple touch icon for iOS devices -->
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -24,9 +29,33 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
+    <!--
+      Open Graph Meta Tags for better social media integration.
+      These tags enhance how links to your site appear when shared on platforms like Facebook and LinkedIn.
+    -->
+    <meta property="og:title" content="Centsible - Financial Management App" />
+    <meta
+      property="og:description"
+      content="Manage your finances effectively and achieve your financial goals with Centsible."
+    />
+    <meta property="og:image" content="%PUBLIC_URL%/logo192.png" />
+    <meta property="og:url" content="https://www.centsibleapp.com" />
+    <meta property="og:type" content="website" />
+    <!-- Twitter Card Meta Tags for Twitter integration -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Centsible - Financial Management App" />
+    <meta
+      name="twitter:description"
+      content="Manage your finances effectively and achieve your financial goals with Centsible."
+    />
+    <meta name="twitter:image" content="%PUBLIC_URL%/logo192.png" />
+    <title>Centsible - Financial Management App</title>
   </head>
   <body>
+    <!--
+      This noscript tag informs users that JavaScript is required to run the app.
+      It enhances accessibility and user experience by providing immediate feedback.
+    -->
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <!--
